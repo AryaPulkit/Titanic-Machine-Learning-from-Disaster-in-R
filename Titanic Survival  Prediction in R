@@ -1,0 +1,125 @@
+titanic_train_all <- read.csv("../input/titanic/train.csv")
+titanic_test_all  <- read.csv("../input/titanic/test.csv")
+sum(is.na(titanic_train_all))
+sum(is.na(titanic_test_all))
+str(titanic_train_all)
+
+titanic_train <- subset(titanic_train_all,select= -c(PassengerId,Cabin,Ticket,Name))
+str(titanic_train)
+
+titanic_test <- subset(titanic_test_all,select= -c(PassengerId,Cabin,Ticket,Name))
+str(titanic_test)
+
+
+library(visdat)
+
+vis_dat(titanic_train)
+sum(is.na((titanic_train)))
+
+vis_dat(titanic_test) #check for NA
+sum(is.na((titanic_test$Age)))
+sum(is.na((titanic_test$Fare)))
+
+library(DMwR)
+titanic_train <-  knnImputation(titanic_train,k=3)
+sum(is.na(titanic_train))
+
+
+#########
+#age_train <- as.integer(titanic_train_all$Age)
+#age_imp <- as.integer(titanic_train$Age)
+
+#age_test <- cbind(age_imp,age_train)
+#View(age_test)
+#View(age_imp)
+#View(age_train)
+
+#age_test <- as.integer(age_test)
+
+#str(age_train)
+########
+
+
+titanic_test <-  knnImputation(titanic_test,k=3)
+sum(is.na(titanic_test))
+
+boxplot(titanic_train)
+boxplot(titanic_test)
+boxplot(titanic_train$Fare)
+boxplot(titanic_test$Fare)
+boxplot(titanic_train$Age)
+
+hist(titanic_train$Age)
+hist(titanic_train$Fare,freq = TRUE)
+hist(titanic_test$Fare)
+plot(density(titanic_train$Fare))
+plot(titanic_train$Fare)
+plot(density(titanic_test$Fare))
+plot(titanic_train$Fare)
+
+plot(titanic_train$Pclass,titanic_train$Fare)
+summary(titanic_train)
+max(titanic_train$Fare)
+max(titanic_test$Fare)
+
+plot(titanic_train$Survived,titanic_train$Fare)
+###
+#library(outliers)
+#fare <- rm.outlier(titanic_train$Fare,fill = TRUE,median = FALSE)
+#View(fare)
+which.max(titanic_train$Fare)
+max(titanic_train$Fare)
+
+###
+str(titanic_train)
+titanic_train$Survived <- as.factor(titanic_train$Survived)
+titanic_train$Pclass <- as.factor(titanic_train$Pclass)
+titanic_train$Age <- as.integer(titanic_train$Age)
+titanic_train$Pclass <- as.factor(titanic_train$Pclass)
+titanic_train$SibSp <- as.factor(titanic_train$SibSp)
+titanic_train$Parch <- as.factor(titanic_train$Parch)
+
+str(titanic_test)
+titanic_test$Pclass <- as.factor(titanic_test$Pclass)
+titanic_test$Age <- as.integer(titanic_test$Age)
+titanic_test$Pclass <- as.factor(titanic_test$Pclass)
+titanic_test$SibSp <- as.factor(titanic_test$SibSp)
+titanic_test$Parch <- as.factor(titanic_test$Parch)
+
+which.max(titanic_train$Fare)
+table(titanic_train$Fare)
+
+
+
+
+
+# Building model SVM
+library(kernlab)
+library(caret)
+model1<-ksvm(Survived ~.,data = titanic_train,kernel = "vanilladot")
+pred_model1 <- predict(model1,newdata=titanic_test)
+table(pred_model1)
+
+#checking accuracy of training model
+pred_model1_train <- predict(model1,newdata=titanic_train)
+mean(titanic_train$Survived==pred_model1_train)#0.8024691
+
+#Random Forest
+library(randomForest)
+model.forest <- randomForest(Survived~.,data=titanic_train, na.action=na.roughfix,importance=TRUE)
+
+pred_forest <- predict(model.forest,newdata=titanic_train)
+
+mean(titanic_train$Survived==pred_forest) # 0.9248036
+ 
+#boosting
+  library(adabag)
+adaboost = boosting(Survived ~ .,
+                    data = titanic_train,
+                    mfinal = 30,boos = TRUE)
+
+importanceplot(adaboost)
+adaboost$importance
+preds = predict(adaboost,titanic_train,type='response')
+table(titanic_train$Survived, preds$class,dnn=c('acts','preds'))
+mean(titanic_train$Survived== preds$class)
